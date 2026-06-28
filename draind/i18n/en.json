@@ -1,0 +1,33 @@
+{
+  "title": "Draind",
+  "toast": {
+    "profile_set": "Profile changed to {profile}",
+    "profile_set_failed": "Failed to change power profile"
+  },
+  "panel": {
+    "title": "Power Management",
+    "unavailable": "Daemon unavailable",
+    "dimmed": "Dimmed",
+    "active": "Active",
+    "profiles": "Power Profiles",
+    "no_daemon": "Cannot connect to draind. Make sure the daemon is running.",
+    "refresh": "Refresh"
+  },
+  "context": {
+    "settings": "Settings"
+  },
+  "settings": {
+    "refresh_interval": {
+      "label": "Refresh interval",
+      "description": "How often to poll draind-ctl for status (ms)."
+    },
+    "compact_mode": {
+      "label": "Compact mode",
+      "description": "Show only the icon in the bar, without the profile label."
+    },
+    "ctl_path": {
+      "label": "draind-ctl path",
+      "description": "Path to the draind-ctl binary."
+    }
+  }
+}
