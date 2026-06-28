@@ -1,0 +1,13 @@
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Noctalia local overrides (not part of the plugin distribution)
+*.local.json
