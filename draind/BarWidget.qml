@@ -29,7 +29,7 @@ NIconButton {
 
     icon: main?.available
         ? (main.dimmed ? "moon" : profileIcon(main.profile))
-        : "battery-warning"
+        : "alert-circle-off"
 
     tooltipText: main?.available
         ? (main.dimmed ? pluginApi?.tr("panel.dimmed") : main.profile)
