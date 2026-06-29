@@ -5,17 +5,19 @@
 | File | Entry type | Role |
 |---|---|---|
 | `Main.qml` | `main` | Singleton; polls `draind-ctl`, owns all state, handles commands |
-| `BarWidget.qml` | `barWidget` | Bar capsule per screen; reads state from main instance, renders icon + label |
+| `BarWidget.qml` | `barWidget` | Bar capsule per screen; renders battery-level icon + status icon side by side |
 | `Panel.qml` | `panel` | Drop-down; shows profile list, calls methods on main instance |
 | `Settings.qml` | `settings` | Plugin settings UI |
 
 ## Data flow
 
 ```
-draind-ctl status / list-profiles / set-profile
+draind-ctl status / battery / list-profiles / set-profile
         │
         ▼
-   Main.qml  (QML properties: available, profile, dimmed, activeSession, profiles)
+   Main.qml  (QML properties: available, profile, dimmed, activeSession, profiles,
+              batteryPresent, batteryPercent, batteryStatus,
+              batteryTimeToEmpty, batteryTimeToFull)
         │
         ├──pluginApi.mainInstance──▶  BarWidget.qml  (reads properties, re-renders on change)
         └──pluginApi.mainInstance──▶  Panel.qml      (reads properties, calls setProfile / refreshStatus)
@@ -27,11 +29,17 @@ All state is owned by `Main.qml` as reactive QML properties. `BarWidget` and `Pa
 
 ```qml
 // Main.qml properties (consumed by BarWidget and Panel via pluginApi.mainInstance)
-property bool   available      // false when draind-ctl exits non-zero
-property string profile        // active profile name, "" when unavailable
-property bool   dimmed         // true when draind reports dimmed state
-property string activeSession  // active session name reported by draind
-property var    profiles       // string[] from draind-ctl list-profiles
+property bool   available           // false when draind-ctl exits non-zero
+property string profile             // active profile name, "" when unavailable
+property bool   dimmed              // true when draind reports dimmed state
+property string activeSession       // active session name reported by draind
+property var    profiles            // string[] from draind-ctl list-profiles
+
+property bool   batteryPresent      // false when no battery found or parse failed
+property int    batteryPercent      // 0–100, -1 when unknown
+property string batteryStatus       // "charging" | "discharging" | "full" | "not_charging" | "unknown"
+property int    batteryTimeToEmpty  // minutes until empty, -1 when N/A
+property int    batteryTimeToFull   // minutes until full, -1 when N/A
 ```
 
 ## Settings

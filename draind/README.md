@@ -4,9 +4,9 @@ Shows and controls [draind](https://github.com/vlukyanets/draind) power manageme
 
 ## Features
 
-- Bar capsule showing the active power profile with an icon and optional label
-- Click to open a panel for switching between profiles
-- Compact mode (icon-only in the bar)
+- Bar capsule with two icons: battery level and charging status (bolt / plug / arrow-down)
+- Battery percentage, time-to-empty, and time-to-full shown in the panel
+- Click to open a panel for switching between power profiles
 - Daemon availability indicator
 - Configurable poll interval and `draind-ctl` binary path
 
@@ -21,7 +21,7 @@ Shows and controls [draind](https://github.com/vlukyanets/draind) power manageme
 | Setting | Default | Description |
 |---|---|---|
 | `refreshInterval` | `5000` | How often to poll `draind-ctl` for status (ms) |
-| `compactMode` | `false` | Show only the icon in the bar (no profile label) |
+| `compactMode` | `false` | *(reserved)* |
 | `ctlPath` | `draind-ctl` | Path to the `draind-ctl` binary |
 
 ## IPC
