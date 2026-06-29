@@ -1,9 +1,11 @@
+import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets
 
-NIconButton {
+Item {
     id: root
 
     property var pluginApi: null
@@ -17,35 +19,125 @@ NIconButton {
     property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
 
     readonly property var main: pluginApi?.mainInstance
-    readonly property bool compactMode: cfg.compactMode ?? defaults.compactMode ?? false
 
-    function profileIcon(p) {
-        if (!p || p === "") return "battery"
-        var n = p.toLowerCase()
-        if (n === "performance") return "zap"
-        if (n === "powersave" || n === "power-save") return "leaf"
-        return "battery"
+    function levelIcon(pct, status) {
+        if (status === "charging") return "battery-charging"
+        if (pct < 0) return "battery"
+        if (pct <= 10) return "battery-exclamation"
+        if (pct <= 35) return "battery-1"
+        if (pct <= 60) return "battery-2"
+        if (pct <= 80) return "battery-3"
+        return "battery-4"
     }
 
-    icon: main?.available
-        ? (main.dimmed ? "moon" : profileIcon(main.profile))
-        : "alert-circle-off"
+    function statusIcon(status) {
+        if (status === "charging")     return "bolt"
+        if (status === "full")         return "plug"
+        if (status === "not_charging") return "plug"
+        if (status === "discharging")  return "arrow-down"
+        return ""
+    }
 
-    tooltipText: main?.available
-        ? (main.dimmed ? pluginApi?.tr("panel.dimmed") : main.profile)
-        : pluginApi?.tr("panel.unavailable")
-    tooltipDirection: BarService.getTooltipDirection(screen?.name)
+    readonly property bool batteryAvailable: (main?.available ?? false) && (main?.batteryPresent ?? false)
+    readonly property string _levelIcon:  batteryAvailable
+        ? levelIcon(main.batteryPercent, main.batteryStatus)
+        : (main?.available ?? false) ? "bolt" : "alert-circle-off"
+    readonly property string _statusIcon: batteryAvailable ? statusIcon(main.batteryStatus) : ""
 
-    baseSize: Style.getCapsuleHeightForScreen(screen?.name)
-    applyUiScale: false
-    customRadius: Style.radiusL
-    colorBg: Style.capsuleColor
-    colorFg: Color.mOnSurface
-    border.color: Style.capsuleBorderColor
-    border.width: Style.capsuleBorderWidth
+    readonly property real iconSize: Style.getCapsuleHeightForScreen(screen?.name)
+    readonly property real singleIconWidth: iconSize
+    readonly property real twoIconWidth: iconSize + Style.fontSizeL + Style.marginS
 
-    onClicked: {
-        if (pluginApi) pluginApi.openPanel(root.screen, this)
+    implicitWidth:  batteryAvailable ? twoIconWidth : singleIconWidth
+    implicitHeight: iconSize
+
+    Rectangle {
+        id: capsule
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
+        width:  parent.implicitWidth
+        height: parent.implicitHeight
+        color:  mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+        radius: Style.radiusL
+        border.color: Style.capsuleBorderColor
+        border.width: Style.capsuleBorderWidth
+
+        Behavior on color {
+            enabled: !Color.isTransitioning
+            ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+        Behavior on width {
+            NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: Style.marginS
+
+            NIcon {
+                icon: root._levelIcon
+                pointSize: Style.toOdd(root.iconSize * 0.48)
+                applyUiScale: false
+                color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
+            }
+
+            NIcon {
+                visible: root._statusIcon !== ""
+                icon: root._statusIcon
+                pointSize: Style.fontSizeL
+                applyUiScale: false
+                color: {
+                    var s = main?.batteryStatus ?? ""
+                    if (s === "charging") return mouseArea.containsMouse ? Color.mOnHover : Color.mPrimary
+                    if (s === "discharging" && (main?.batteryPercent ?? 100) <= 10)
+                        return mouseArea.containsMouse ? Color.mOnHover : Color.mError
+                    return mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
+                }
+            }
+        }
+    }
+
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+        onEntered: {
+            var tip = barTooltip()
+            if (tip) TooltipService.show(root, tip, BarService.getTooltipDirection(screen?.name))
+        }
+        onExited: TooltipService.hide(root)
+
+        onClicked: mouse => {
+            if (mouse.button === Qt.LeftButton) {
+                if (pluginApi) pluginApi.openPanel(root.screen, root)
+            } else if (mouse.button === Qt.RightButton) {
+                PanelService.showContextMenu(contextMenu, root, screen)
+            }
+        }
+    }
+
+    function barTooltip() {
+        if (!main?.available) return pluginApi?.tr("panel.unavailable") ?? "Daemon unavailable"
+        if (main.dimmed) return pluginApi?.tr("panel.dimmed") ?? "Dimmed"
+        if (main.batteryPresent) {
+            var s = main.batteryStatus
+            var pct = main.batteryPercent >= 0 ? " " + main.batteryPercent + "%" : ""
+            if (main.batteryTimeToEmpty >= 0) {
+                var h = Math.floor(main.batteryTimeToEmpty / 60)
+                var m = main.batteryTimeToEmpty % 60
+                return s + pct + " — " + h + "h " + m + "m remaining"
+            }
+            if (main.batteryTimeToFull >= 0) {
+                var h2 = Math.floor(main.batteryTimeToFull / 60)
+                var m2 = main.batteryTimeToFull % 60
+                return s + pct + " — " + h2 + "h " + m2 + "m to full"
+            }
+            return s + pct
+        }
+        return main.profile
     }
 
     NPopupContextMenu {
@@ -64,9 +156,5 @@ NIconButton {
                 BarService.openPluginSettings(root.screen, pluginApi.manifest)
             }
         }
-    }
-
-    onRightClicked: {
-        PanelService.showContextMenu(contextMenu, root, screen)
     }
 }

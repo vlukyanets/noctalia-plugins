@@ -11,7 +11,10 @@
     "active": "Active",
     "profiles": "Power Profiles",
     "no_daemon": "Cannot connect to draind. Make sure the daemon is running.",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "battery": "Battery",
+    "battery_time_remaining": "Time remaining",
+    "battery_time_to_full": "Time to full"
   },
   "context": {
     "settings": "Settings"

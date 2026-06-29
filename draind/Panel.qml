@@ -50,10 +50,54 @@ Item {
                 }
             }
 
+            // Battery card
+            Card {
+                visible: main?.batteryPresent ?? false
+                headerIcon: (main?.batteryStatus === "charging") ? "battery-charging" : "battery"
+                headerIconColor: {
+                    var pct = main?.batteryPercent ?? -1
+                    var s = main?.batteryStatus ?? ""
+                    if (s === "charging" || s === "full") return Color.mPrimary
+                    if (pct >= 0 && pct <= 10) return Color.mError
+                    return Color.mPrimary
+                }
+                title: {
+                    var pct = main?.batteryPercent ?? -1
+                    var s = main?.batteryStatus ?? ""
+                    var label = pluginApi?.tr("panel.battery") ?? "Battery"
+                    if (pct >= 0) label += " — " + pct + "%"
+                    return label
+                }
+
+                NText {
+                    visible: (main?.batteryTimeToEmpty ?? -1) >= 0
+                    text: {
+                        var t = main?.batteryTimeToEmpty ?? 0
+                        var h = Math.floor(t / 60), m = t % 60
+                        return (pluginApi?.tr("panel.battery_time_remaining") ?? "Time remaining") + ": " + h + "h " + m + "m"
+                    }
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    visible: (main?.batteryTimeToFull ?? -1) >= 0
+                    text: {
+                        var t = main?.batteryTimeToFull ?? 0
+                        var h = Math.floor(t / 60), m = t % 60
+                        return (pluginApi?.tr("panel.battery_time_to_full") ?? "Time to full") + ": " + h + "h " + m + "m"
+                    }
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+            }
+
             // Profiles card
             Card {
                 visible: (main?.available ?? false) && (main?.profiles?.length ?? 0) > 0
-                headerIcon: "zap-off"
+                headerIcon: "bolt-off"
                 headerIconColor: Color.mPrimary
                 title: pluginApi?.tr("panel.profiles") ?? "Power Profiles"
 
@@ -64,7 +108,7 @@ Item {
                         required property int index
                         Layout.fillWidth: true
                         text: modelData
-                        icon: modelData.toLowerCase() === "performance" ? "zap"
+                        icon: modelData.toLowerCase() === "performance" ? "bolt"
                             : (modelData.toLowerCase() === "powersave" || modelData.toLowerCase() === "power-save") ? "leaf"
                             : "battery"
                         backgroundColor: modelData === main?.profile ? Color.mPrimary : Color.mSurface

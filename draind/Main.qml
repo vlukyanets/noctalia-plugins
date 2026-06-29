@@ -20,13 +20,22 @@ Item {
     property var profiles: []
     property bool profilesLoaded: false
 
+    property bool batteryPresent: false
+    property int batteryPercent: -1
+    property string batteryStatus: ""
+    property int batteryTimeToEmpty: -1
+    property int batteryTimeToFull: -1
+
     property string _statusOutput: ""
     property string _profilesOutput: ""
+    property string _batteryOutput: ""
     property string _targetProfile: ""
 
     function refreshStatus() {
         _statusOutput = ""
         statusProcess.running = true
+        _batteryOutput = ""
+        batteryProcess.running = true
     }
 
     function loadProfiles() {
@@ -96,6 +105,43 @@ Item {
                 root.profilesLoaded = list.length > 0
             }
             root._profilesOutput = ""
+        }
+    }
+
+    Process {
+        id: batteryProcess
+        command: ["sh", "-c", root.ctlPath + " battery"]
+        stdout: SplitParser {
+            onRead: line => root._batteryOutput += line + "\n"
+        }
+        onExited: exitCode => {
+            if (exitCode === 0) {
+                var present = false, pct = -1, st = "", tte = -1, ttf = -1
+                root._batteryOutput.split("\n").forEach(line => {
+                    var m = line.match(/^(\S+):\s+(.+)$/)
+                    if (m) {
+                        var k = m[1], v = m[2].trim()
+                        if (k === "status") {
+                            st = v
+                            present = (v !== "absent" && v !== "unknown")
+                        } else if (k === "percent") {
+                            pct = parseInt(v)
+                        } else if (k === "time_to_empty") {
+                            var te = v.match(/(\d+)h\s+(\d+)m/)
+                            if (te) tte = parseInt(te[1]) * 60 + parseInt(te[2])
+                        } else if (k === "time_to_full") {
+                            var tf = v.match(/(\d+)h\s+(\d+)m/)
+                            if (tf) ttf = parseInt(tf[1]) * 60 + parseInt(tf[2])
+                        }
+                    }
+                })
+                root.batteryPresent = present
+                root.batteryPercent = pct
+                root.batteryStatus = st
+                root.batteryTimeToEmpty = tte
+                root.batteryTimeToFull = ttf
+            }
+            root._batteryOutput = ""
         }
     }
 
