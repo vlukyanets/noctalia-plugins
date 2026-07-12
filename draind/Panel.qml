@@ -57,7 +57,7 @@ Item {
 
                 NText {
                     visible: (main?.available ?? false) && (main?.activeSession ?? "") !== ""
-                    text: (pluginApi?.tr("panel.active_session") ?? "Active session") + ": " + (main?.activeSession ?? "")
+                    text: (pluginApi?.tr("panel.active_session") ?? "Active session ID") + ": " + (main?.activeSession ?? "")
                     pointSize: Style.fontSizeXS
                     color: Color.mOnSurface
                     Layout.fillWidth: true

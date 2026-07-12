@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Services.UI
@@ -30,25 +29,14 @@ Item {
         return "battery-4"
     }
 
-    function statusIcon(status) {
-        if (status === "charging")     return "bolt"
-        if (status === "full")         return "plug"
-        if (status === "not_charging") return "plug"
-        if (status === "discharging")  return "arrow-down"
-        return ""
-    }
-
     readonly property bool batteryAvailable: (main?.available ?? false) && (main?.batteryPresent ?? false)
     readonly property string _levelIcon:  batteryAvailable
         ? levelIcon(main.batteryPercent, main.batteryStatus)
         : (main?.available ?? false) ? "bolt" : "alert-circle-off"
-    readonly property string _statusIcon: batteryAvailable ? statusIcon(main.batteryStatus) : ""
 
     readonly property real iconSize: Style.getCapsuleHeightForScreen(screen?.name)
-    readonly property real singleIconWidth: iconSize
-    readonly property real twoIconWidth: iconSize + Style.fontSizeL + Style.marginS
 
-    implicitWidth:  batteryAvailable ? twoIconWidth : singleIconWidth
+    implicitWidth:  iconSize
     implicitHeight: iconSize
 
     Rectangle {
@@ -66,33 +54,18 @@ Item {
             enabled: !Color.isTransitioning
             ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
         }
-        Behavior on width {
-            NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
 
-        RowLayout {
+        NIcon {
             anchors.centerIn: parent
-            spacing: Style.marginS
-
-            NIcon {
-                icon: root._levelIcon
-                pointSize: Style.toOdd(root.iconSize * 0.48)
-                applyUiScale: false
-                color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
-            }
-
-            NIcon {
-                visible: root._statusIcon !== ""
-                icon: root._statusIcon
-                pointSize: Style.fontSizeL
-                applyUiScale: false
-                color: {
-                    var s = main?.batteryStatus ?? ""
-                    if (s === "charging") return mouseArea.containsMouse ? Color.mOnHover : Color.mPrimary
-                    if (s === "discharging" && (main?.batteryPercent ?? 100) <= 10)
-                        return mouseArea.containsMouse ? Color.mOnHover : Color.mError
-                    return mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
-                }
+            icon: root._levelIcon
+            pointSize: Style.toOdd(root.iconSize * 0.48)
+            applyUiScale: false
+            color: {
+                if (mouseArea.containsMouse) return Color.mOnHover
+                var s = main?.batteryStatus ?? ""
+                if (s === "charging") return Color.mPrimary
+                if (s === "discharging" && (main?.batteryPercent ?? 100) <= 10) return Color.mError
+                return Color.mOnSurface
             }
         }
     }
