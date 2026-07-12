@@ -241,8 +241,6 @@ Item {
                         ? (pluginApi?.tr("panel.uninhibit") ?? "Uninhibit")
                         : (pluginApi?.tr("panel.inhibit") ?? "Inhibit")
                     icon: "hand"
-                    backgroundColor: (main?.manualInhibitActive ?? false) ? Color.mError : Color.mSurface
-                    textColor: (main?.manualInhibitActive ?? false) ? Color.mOnError : Color.mOnSurface
                     onClicked: main?.toggleManualInhibit()
                 }
 

@@ -1,7 +1,7 @@
 {
   "id": "draind",
   "name": "Draind",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "minNoctaliaVersion": "4.7.0",
   "author": "vlukyanets",
   "license": "MIT",
