@@ -15,6 +15,12 @@ Item {
 
     readonly property var main: pluginApi?.mainInstance
 
+    function timeLeftText(sec, inhibitedField) {
+        if (inhibitedField) return pluginApi?.tr("panel.prevented_by_inhibitor") ?? "Prevented by inhibitor"
+        if (sec < 0) return pluginApi?.tr("panel.disabled") ?? "Disabled"
+        return Math.floor(sec / 60) + "m " + (sec % 60) + "s"
+    }
+
     Rectangle {
         id: panelContainer
         anchors.fill: parent
@@ -46,6 +52,30 @@ Item {
                     pointSize: Style.fontSizeXS
                     color: Color.mError
                     wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    visible: (main?.available ?? false) && (main?.activeSession ?? "") !== ""
+                    text: (pluginApi?.tr("panel.active_session") ?? "Active session") + ": " + (main?.activeSession ?? "")
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    visible: (main?.available ?? false) && (main?.screenOff ?? false)
+                    text: pluginApi?.tr("panel.screen_off") ?? "Screen off"
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    visible: (main?.available ?? false) && (main?.cpuFreqMhz ?? -1) >= 0
+                    text: (pluginApi?.tr("panel.cpu_freq") ?? "CPU freq") + ": " + (main?.cpuFreqMhz ?? 0) + " MHz"
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurface
                     Layout.fillWidth: true
                 }
             }
@@ -94,6 +124,55 @@ Item {
                 }
             }
 
+            // Idle timers card
+            Card {
+                visible: main?.available ?? false
+                headerIcon: "clock"
+                headerIconColor: (main?.inhibited ?? false) ? Color.mError : Color.mPrimary
+                title: pluginApi?.tr("panel.idle_timers") ?? "Idle Timers"
+
+                NText {
+                    text: (pluginApi?.tr("panel.dim_in") ?? "Dim in") + ": " + root.timeLeftText(main?.dimInSec ?? -1, main?.dimInhibited ?? false)
+                    pointSize: Style.fontSizeXS
+                    color: (main?.dimInhibited ?? false) ? Color.mError : Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    text: (pluginApi?.tr("panel.screen_off_in") ?? "Screen off in") + ": " + root.timeLeftText(main?.screenOffInSec ?? -1, main?.screenOffInhibited ?? false)
+                    pointSize: Style.fontSizeXS
+                    color: (main?.screenOffInhibited ?? false) ? Color.mError : Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+
+                NText {
+                    text: (pluginApi?.tr("panel.sleep_in") ?? "Sleep in") + ": " + root.timeLeftText(main?.sleepInSec ?? -1, main?.sleepInhibited ?? false)
+                    pointSize: Style.fontSizeXS
+                    color: (main?.sleepInhibited ?? false) ? Color.mError : Color.mOnSurface
+                    Layout.fillWidth: true
+                }
+            }
+
+            // Inhibitors card
+            Card {
+                visible: (main?.available ?? false) && (main?.inhibitors?.length ?? 0) > 0
+                headerIcon: "hand"
+                headerIconColor: Color.mError
+                title: pluginApi?.tr("panel.inhibitors") ?? "Inhibitors"
+
+                Repeater {
+                    model: main?.inhibitors ?? []
+                    delegate: NText {
+                        required property string modelData
+                        text: modelData
+                        pointSize: Style.fontSizeXS
+                        color: Color.mOnSurface
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+
             // Profiles card
             Card {
                 visible: (main?.available ?? false) && (main?.profiles?.length ?? 0) > 0
@@ -120,12 +199,39 @@ Item {
 
             Item { Layout.fillHeight: true }
 
-            // Refresh button
-            NButton {
+            RowLayout {
                 Layout.fillWidth: true
-                text: pluginApi?.tr("panel.refresh") ?? "Refresh"
-                icon: "rotate"
-                onClicked: main?.refreshStatus()
+                spacing: Style.marginS
+
+                // Manual inhibit toggle
+                NButton {
+                    Layout.fillWidth: true
+                    visible: main?.available ?? false
+                    text: (main?.manualInhibitActive ?? false)
+                        ? (pluginApi?.tr("panel.uninhibit") ?? "Uninhibit")
+                        : (pluginApi?.tr("panel.inhibit") ?? "Inhibit")
+                    icon: "hand"
+                    backgroundColor: (main?.manualInhibitActive ?? false) ? Color.mError : Color.mSurface
+                    textColor: (main?.manualInhibitActive ?? false) ? Color.mOnError : Color.mOnSurface
+                    onClicked: main?.toggleManualInhibit()
+                }
+
+                // Lock now button
+                NButton {
+                    Layout.fillWidth: true
+                    visible: main?.available ?? false
+                    text: pluginApi?.tr("panel.lock_now") ?? "Lock now"
+                    icon: "lock"
+                    onClicked: main?.lock()
+                }
+
+                // Refresh button
+                NButton {
+                    Layout.fillWidth: true
+                    text: pluginApi?.tr("panel.refresh") ?? "Refresh"
+                    icon: "rotate"
+                    onClicked: main?.refreshStatus()
+                }
             }
         }
     }

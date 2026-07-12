@@ -2,7 +2,12 @@
   "title": "Draind",
   "toast": {
     "profile_set": "Profile changed to {profile}",
-    "profile_set_failed": "Failed to change power profile"
+    "profile_set_failed": "Failed to change power profile",
+    "lock_failed": "Failed to lock session",
+    "reload_config": "Configuration reloaded",
+    "reload_config_failed": "Failed to reload configuration",
+    "inhibit_failed": "Failed to inhibit idle",
+    "uninhibit_failed": "Failed to remove idle inhibitor"
   },
   "panel": {
     "title": "Power Management",
@@ -14,7 +19,21 @@
     "refresh": "Refresh",
     "battery": "Battery",
     "battery_time_remaining": "Time remaining",
-    "battery_time_to_full": "Time to full"
+    "battery_time_to_full": "Time to full",
+    "active_session": "Active session",
+    "screen_off": "Screen off",
+    "idle_timers": "Idle Timers",
+    "dim_in": "Dim in",
+    "screen_off_in": "Screen off in",
+    "sleep_in": "Sleep in",
+    "prevented_by_inhibitor": "Prevented by inhibitor",
+    "disabled": "Disabled",
+    "inhibitors": "Inhibitors",
+    "cpu_freq": "CPU freq",
+    "inhibit": "Inhibit",
+    "uninhibit": "Uninhibit",
+    "lock_now": "Lock now",
+    "reload_config": "Reload config"
   },
   "context": {
     "settings": "Settings"
@@ -23,10 +42,6 @@
     "refresh_interval": {
       "label": "Refresh interval",
       "description": "How often to poll draind-ctl for status (ms)."
-    },
-    "compact_mode": {
-      "label": "Compact mode",
-      "description": "Show only the icon in the bar, without the profile label."
     },
     "ctl_path": {
       "label": "draind-ctl path",

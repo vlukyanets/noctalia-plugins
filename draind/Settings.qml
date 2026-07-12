@@ -7,11 +7,12 @@ ColumnLayout {
     id: root
     property var pluginApi: null
 
+    readonly property var main: pluginApi?.mainInstance
+
     property var cfg: pluginApi?.pluginSettings || ({})
     property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
 
     property int valueRefreshInterval: cfg.refreshInterval ?? defaults.refreshInterval ?? 5000
-    property bool valueCompactMode: cfg.compactMode ?? defaults.compactMode ?? false
     property string valueCtlPath: cfg.ctlPath ?? defaults.ctlPath ?? "draind-ctl"
 
     spacing: Style.marginM
@@ -19,7 +20,6 @@ ColumnLayout {
     function saveSettings() {
         if (!pluginApi) return
         pluginApi.pluginSettings.refreshInterval = valueRefreshInterval
-        pluginApi.pluginSettings.compactMode = valueCompactMode
         pluginApi.pluginSettings.ctlPath = valueCtlPath
         pluginApi.saveSettings()
     }
@@ -47,23 +47,6 @@ ColumnLayout {
         Layout.bottomMargin: Style.marginM
     }
 
-    NToggle {
-        Layout.fillWidth: true
-        label: pluginApi?.tr("settings.compact_mode.label") ?? "Compact mode"
-        description: pluginApi?.tr("settings.compact_mode.description") ?? ""
-        checked: root.valueCompactMode
-        onToggled: checked => {
-            root.valueCompactMode = checked
-            root.saveSettings()
-        }
-    }
-
-    NDivider {
-        Layout.fillWidth: true
-        Layout.topMargin: Style.marginM
-        Layout.bottomMargin: Style.marginM
-    }
-
     NLabel {
         label: pluginApi?.tr("settings.ctl_path.label") ?? "draind-ctl path"
         description: pluginApi?.tr("settings.ctl_path.description") ?? ""
@@ -76,6 +59,19 @@ ColumnLayout {
             root.valueCtlPath = text
             root.saveSettings()
         }
+    }
+
+    NDivider {
+        Layout.fillWidth: true
+        Layout.topMargin: Style.marginM
+        Layout.bottomMargin: Style.marginM
+    }
+
+    NButton {
+        Layout.fillWidth: true
+        text: pluginApi?.tr("panel.reload_config") ?? "Reload config"
+        icon: "rotate"
+        onClicked: root.main?.reloadConfig()
     }
 
     Item { Layout.fillHeight: true }

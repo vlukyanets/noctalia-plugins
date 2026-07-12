@@ -7,7 +7,11 @@ Shows and controls [draind](https://github.com/vlukyanets/draind) power manageme
 - Bar capsule with two icons: battery level and charging status (bolt / plug / arrow-down)
 - Battery percentage, time-to-empty, and time-to-full shown in the panel
 - Click to open a panel for switching between power profiles
-- Daemon availability indicator
+- Idle timer countdowns (dim / screen off / sleep), including "prevented by inhibitor" state
+- Inhibitor list (e.g. media players preventing idle/sleep)
+- Active session id, screen-off state, and current CPU frequency
+- Lock session, reload daemon config, and toggle a manual idle inhibitor directly from the plugin
+- Daemon availability indicator, with automatic fallback if `draind-ctl` stops responding
 - Configurable poll interval and `draind-ctl` binary path
 
 ## Requirements
@@ -21,8 +25,9 @@ Shows and controls [draind](https://github.com/vlukyanets/draind) power manageme
 | Setting | Default | Description |
 |---|---|---|
 | `refreshInterval` | `5000` | How often to poll `draind-ctl` for status (ms) |
-| `compactMode` | `false` | *(reserved)* |
 | `ctlPath` | `draind-ctl` | Path to the `draind-ctl` binary |
+
+Requires `draind` v0.3.2+ for the idle timer, inhibitor, and lock/reload-config features. Manual inhibit/uninhibit and CPU frequency reporting require a `draind-ctl` that supports the `inhibit`/`uninhibit` commands and the `cpu freq` status line.
 
 ## IPC
 

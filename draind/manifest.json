@@ -1,7 +1,7 @@
 {
   "id": "draind",
   "name": "Draind",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "minNoctaliaVersion": "4.7.0",
   "author": "vlukyanets",
   "license": "MIT",
@@ -20,7 +20,6 @@
   "metadata": {
     "defaultSettings": {
       "refreshInterval": 5000,
-      "compactMode": false,
       "ctlPath": "draind-ctl"
     }
   }
