@@ -24,9 +24,12 @@ Item {
     property int dimInSec: -1
     property int screenOffInSec: -1
     property int sleepInSec: -1
+    property int lockInSec: -1
     property bool dimInhibited: false
     property bool screenOffInhibited: false
     property bool sleepInhibited: false
+    property bool lockInhibited: false
+    property bool lockOnScreenOff: false
     property bool inhibited: false
     property var inhibitors: []
     property bool manualInhibitActive: false
@@ -51,6 +54,16 @@ Item {
         if (v === "prevented by inhibitor") return { sec: -1, inhibited: true }
         var m = v.match(/(\d+)m\s+(\d+)s/)
         return { sec: m ? parseInt(m[1]) * 60 + parseInt(m[2]) : -1, inhibited: false }
+    }
+
+    // "lock in:" additionally reports "with screen off" (locks via lock_on_screen_off rather
+    // than its own timer) and "disabled" (lock_timeout is 0 and lock_on_screen_off is off).
+    function parseLockIn(v) {
+        if (v === "prevented by inhibitor") return { sec: -1, inhibited: true, onScreenOff: false }
+        if (v === "with screen off") return { sec: -1, inhibited: false, onScreenOff: true }
+        if (v === "disabled") return { sec: -1, inhibited: false, onScreenOff: false }
+        var m = v.match(/(\d+)m\s+(\d+)s/)
+        return { sec: m ? parseInt(m[1]) * 60 + parseInt(m[2]) : -1, inhibited: false, onScreenOff: false }
     }
 
     function refreshStatus() {
@@ -118,8 +131,9 @@ Item {
             watchdog.stop()
             if (exitCode === 0) {
                 var p = "", d = false, so = false, s = ""
-                var dimIn = -1, screenOffIn = -1, sleepIn = -1
-                var dimInh = false, screenOffInh = false, sleepInh = false
+                var dimIn = -1, screenOffIn = -1, sleepIn = -1, lockIn = -1
+                var dimInh = false, screenOffInh = false, sleepInh = false, lockInh = false
+                var lockOnSo = false
                 var cpuFreq = -1
                 root._statusOutput.split("\n").forEach(line => {
                     var idx = line.indexOf(":")
@@ -133,6 +147,7 @@ Item {
                     else if (k === "dim in") { var td = root.parseTimeLeft(v); dimIn = td.sec; dimInh = td.inhibited }
                     else if (k === "screen off in") { var ts = root.parseTimeLeft(v); screenOffIn = ts.sec; screenOffInh = ts.inhibited }
                     else if (k === "sleep in") { var tl = root.parseTimeLeft(v); sleepIn = tl.sec; sleepInh = tl.inhibited }
+                    else if (k === "lock in") { var tk = root.parseLockIn(v); lockIn = tk.sec; lockInh = tk.inhibited; lockOnSo = tk.onScreenOff }
                 })
                 root.profile = p
                 root.dimmed = d
@@ -141,10 +156,13 @@ Item {
                 root.dimInSec = dimIn
                 root.screenOffInSec = screenOffIn
                 root.sleepInSec = sleepIn
+                root.lockInSec = lockIn
                 root.dimInhibited = dimInh
                 root.screenOffInhibited = screenOffInh
                 root.sleepInhibited = sleepInh
-                root.inhibited = dimInh || screenOffInh || sleepInh
+                root.lockInhibited = lockInh
+                root.lockOnScreenOff = lockOnSo
+                root.inhibited = dimInh || screenOffInh || sleepInh || lockInh
                 root.cpuFreqMhz = cpuFreq
                 root.available = p !== ""
             } else {
@@ -156,9 +174,12 @@ Item {
                 root.dimInSec = -1
                 root.screenOffInSec = -1
                 root.sleepInSec = -1
+                root.lockInSec = -1
                 root.dimInhibited = false
                 root.screenOffInhibited = false
                 root.sleepInhibited = false
+                root.lockInhibited = false
+                root.lockOnScreenOff = false
                 root.inhibited = false
                 root.cpuFreqMhz = -1
             }

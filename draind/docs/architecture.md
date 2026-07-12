@@ -16,8 +16,9 @@ draind-ctl status / battery / list-profiles / list-inhibitors / set-profile / lo
         │
         ▼
    Main.qml  (QML properties: available, profile, dimmed, screenOff, activeSession, profiles,
-              dimInSec, screenOffInSec, sleepInSec, dimInhibited, screenOffInhibited,
-              sleepInhibited, inhibited, inhibitors, manualInhibitActive, cpuFreqMhz,
+              dimInSec, screenOffInSec, sleepInSec, lockInSec, dimInhibited, screenOffInhibited,
+              sleepInhibited, lockInhibited, lockOnScreenOff, inhibited, inhibitors,
+              manualInhibitActive, cpuFreqMhz,
               batteryPresent, batteryPercent, batteryStatus,
               batteryTimeToEmpty, batteryTimeToFull)
         │
@@ -43,10 +44,14 @@ property var    profiles            // string[] from draind-ctl list-profiles
 property int    dimInSec            // seconds until dim, -1 when disabled/inhibited/unknown
 property int    screenOffInSec      // seconds until screen off, -1 when disabled/inhibited/unknown
 property int    sleepInSec          // seconds until sleep, -1 when disabled/inhibited/unknown
+property int    lockInSec           // seconds until idle-lock, -1 when disabled/inhibited/unknown
+                                     // (lock_timeout == 0; may still lock via lockOnScreenOff)
 property bool   dimInhibited        // true if dim is currently held off by an inhibitor
 property bool   screenOffInhibited  // true if screen-off is currently held off by an inhibitor
 property bool   sleepInhibited      // true if sleep is currently held off by an inhibitor
-property bool   inhibited           // true if any of the above three are inhibited
+property bool   lockInhibited       // true if idle-lock is currently held off by an inhibitor
+property bool   lockOnScreenOff     // true if the daemon also locks the instant screen turns off
+property bool   inhibited           // true if any of the above four are inhibited
 property var    inhibitors          // string[] from draind-ctl list-inhibitors, [] when none
 property bool   manualInhibitActive // true if inhibitors contains a "[manual]"-prefixed entry
 property int    cpuFreqMhz          // current CPU frequency in MHz, -1 when not reported
