@@ -1,18 +1,5 @@
 {
   "version": 1,
   "plugins": [
-    {
-      "id": "draind",
-      "name": "Draind",
-      "version": "0.3.3",
-      "official": false,
-      "author": "vlukyanets",
-      "description": "Show and control draind power management profiles from the menu bar.",
-      "repository": "https://github.com/vlukyanets/noctalia-plugins",
-      "minNoctaliaVersion": "4.7.0",
-      "license": "MIT",
-      "tags": ["Bar", "Panel", "System"],
-      "lastUpdated": "2026-07-12T23:00:00Z"
-    }
   ]
 }
