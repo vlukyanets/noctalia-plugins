@@ -1,0 +1,50 @@
+{
+  "title": "Ampered",
+  "toast": {
+    "profile_set": "Профіль змінено на {profile}",
+    "profile_set_failed": "Не вдалося змінити профіль живлення",
+    "lock_failed": "Не вдалося заблокувати сеанс",
+    "reload_config": "Конфігурацію перезавантажено",
+    "reload_config_failed": "Не вдалося перезавантажити конфігурацію",
+    "inhibit_failed": "Не вдалося заблокувати бездіяльність",
+    "uninhibit_failed": "Не вдалося зняти блокування бездіяльності"
+  },
+  "panel": {
+    "unavailable": "Демон недоступний",
+    "no_daemon": "Не вдається під'єднатися до ampered. Переконайтеся, що демон запущено.",
+    "battery": "Батарея",
+    "status": "Стан",
+    "battery_time_remaining": "Залишилось часу",
+    "battery_time_to_full": "До повного заряду",
+    "power_source": "Джерело живлення",
+    "power_ac": "Від мережі",
+    "power_battery": "Від батареї",
+    "profiles": "Профілі живлення",
+    "inhibitors": "Блокування",
+    "inhibit": "Заблокувати бездіяльність",
+    "uninhibit": "Зняти блокування",
+    "idle_timers": "Таймери бездіяльності",
+    "dim_in": "Затемнення через",
+    "screen_off_in": "Вимкнення екрана через",
+    "sleep_in": "Сон через",
+    "lock_in": "Блокування через",
+    "disabled": "Вимкнено",
+    "with_screen_off": "При вимкненні екрана",
+    "inhibited": "Бездіяльність заблоковано — відлік призупинено",
+    "lock_now": "Заблокувати",
+    "reload_config": "Перезавантажити конфігурацію"
+  },
+  "context": {
+    "settings": "Налаштування"
+  },
+  "settings": {
+    "refresh_interval": {
+      "label": "Інтервал перепідключення",
+      "description": "Як часто повторювати під'єднання до потоку ampered-ctl watch у разі розриву (мс)."
+    },
+    "ctl_path": {
+      "label": "Шлях до ampered-ctl",
+      "description": "Шлях до виконуваного файлу ampered-ctl."
+    }
+  }
+}

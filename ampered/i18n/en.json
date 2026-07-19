@@ -1,0 +1,50 @@
+{
+  "title": "Ampered",
+  "toast": {
+    "profile_set": "Profile changed to {profile}",
+    "profile_set_failed": "Failed to change power profile",
+    "lock_failed": "Failed to lock session",
+    "reload_config": "Configuration reloaded",
+    "reload_config_failed": "Failed to reload configuration",
+    "inhibit_failed": "Failed to inhibit idle",
+    "uninhibit_failed": "Failed to remove idle inhibitor"
+  },
+  "panel": {
+    "unavailable": "Daemon unavailable",
+    "no_daemon": "Cannot connect to ampered. Make sure the daemon is running.",
+    "battery": "Battery",
+    "status": "Status",
+    "battery_time_remaining": "Time remaining",
+    "battery_time_to_full": "Time to full",
+    "power_source": "Power source",
+    "power_ac": "AC power",
+    "power_battery": "On battery",
+    "profiles": "Power Profiles",
+    "inhibitors": "Inhibitors",
+    "inhibit": "Inhibit",
+    "uninhibit": "Uninhibit",
+    "idle_timers": "Idle Timers",
+    "dim_in": "Dim in",
+    "screen_off_in": "Screen off in",
+    "sleep_in": "Sleep in",
+    "lock_in": "Lock in",
+    "disabled": "Disabled",
+    "with_screen_off": "With screen off",
+    "inhibited": "Idle inhibited — countdowns paused",
+    "lock_now": "Lock now",
+    "reload_config": "Reload config"
+  },
+  "context": {
+    "settings": "Settings"
+  },
+  "settings": {
+    "refresh_interval": {
+      "label": "Reconnect interval",
+      "description": "How often to retry the ampered-ctl watch stream if it drops (ms)."
+    },
+    "ctl_path": {
+      "label": "ampered-ctl path",
+      "description": "Path to the ampered-ctl binary."
+    }
+  }
+}

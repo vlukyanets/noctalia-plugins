@@ -6,7 +6,7 @@ A personal [Noctalia](https://noctalia.app) v4 plugin registry.
 
 | Plugin | Description |
 |---|---|
-| [draind](draind/) | Show and control [draind](https://github.com/vlukyanets/draind) power management profiles from the menu bar |
+| [ampered](ampered/) | Show [ampered](https://github.com/vlukyanets/ampered) power status and switch power profiles from the menu bar |
 
 ## Adding this registry in Noctalia
 

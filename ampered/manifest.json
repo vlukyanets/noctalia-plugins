@@ -1,0 +1,26 @@
+{
+  "id": "ampered",
+  "name": "Ampered",
+  "version": "0.1.0",
+  "minNoctaliaVersion": "4.7.0",
+  "author": "vlukyanets",
+  "license": "MIT",
+  "repository": "https://github.com/vlukyanets/noctalia-plugins",
+  "description": "Show ampered power status and switch power profiles from the menu bar.",
+  "tags": ["Bar", "Panel", "System"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "refreshInterval": 5000,
+      "ctlPath": "ampered-ctl"
+    }
+  }
+}

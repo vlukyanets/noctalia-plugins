@@ -1,0 +1,50 @@
+{
+  "title": "Ampered",
+  "toast": {
+    "profile_set": "Профиль изменён на {profile}",
+    "profile_set_failed": "Не удалось изменить профиль питания",
+    "lock_failed": "Не удалось заблокировать сеанс",
+    "reload_config": "Конфигурация перезагружена",
+    "reload_config_failed": "Не удалось перезагрузить конфигурацию",
+    "inhibit_failed": "Не удалось заблокировать простой",
+    "uninhibit_failed": "Не удалось снять блокировку простоя"
+  },
+  "panel": {
+    "unavailable": "Демон недоступен",
+    "no_daemon": "Не удаётся подключиться к ampered. Убедитесь, что демон запущен.",
+    "battery": "Батарея",
+    "status": "Состояние",
+    "battery_time_remaining": "Осталось времени",
+    "battery_time_to_full": "До полной зарядки",
+    "power_source": "Источник питания",
+    "power_ac": "От сети",
+    "power_battery": "От батареи",
+    "profiles": "Профили питания",
+    "inhibitors": "Блокировки",
+    "inhibit": "Заблокировать простой",
+    "uninhibit": "Снять блокировку",
+    "idle_timers": "Таймеры простоя",
+    "dim_in": "Затемнение через",
+    "screen_off_in": "Отключение экрана через",
+    "sleep_in": "Сон через",
+    "lock_in": "Блокировка через",
+    "disabled": "Отключено",
+    "with_screen_off": "При отключении экрана",
+    "inhibited": "Простой заблокирован — отсчёт приостановлен",
+    "lock_now": "Заблокировать",
+    "reload_config": "Перезагрузить конфигурацию"
+  },
+  "context": {
+    "settings": "Настройки"
+  },
+  "settings": {
+    "refresh_interval": {
+      "label": "Интервал переподключения",
+      "description": "Как часто повторять подключение к потоку ampered-ctl watch при обрыве (мс)."
+    },
+    "ctl_path": {
+      "label": "Путь к ampered-ctl",
+      "description": "Путь к исполняемому файлу ampered-ctl."
+    }
+  }
+}

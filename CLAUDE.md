@@ -4,7 +4,7 @@
 
 ```
 registry.json    Registry index — one object per plugin (Noctalia v4 format)
-draind/          Draind plugin (see draind/CLAUDE.md for plugin-specific notes)
+ampered/         Ampered plugin (see ampered/CLAUDE.md for plugin-specific notes)
 LICENSE
 ```
 
