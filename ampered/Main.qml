@@ -10,11 +10,12 @@ Item {
         ?? pluginApi?.manifest?.metadata?.defaultSettings?.ctlPath
         ?? "ampered-ctl"
 
-    // Repurposed from a poll rate: updates are event-driven over the `watch` stream, so this is
-    // only the base cadence for reconnecting a dropped stream (and sizing the liveness window).
-    readonly property int reconnectInterval: pluginApi?.pluginSettings?.refreshInterval
-        ?? pluginApi?.manifest?.metadata?.defaultSettings?.refreshInterval
-        ?? 5000
+    // Expected cadence of `ampered-ctl watch`'s own heartbeat lines (its fixed HEARTBEAT_INTERVAL
+    // is 20s as of this writing). Sizes both the liveness watchdog (how long with *no* line at all,
+    // not even a heartbeat, before we declare the pipe hung) and the reconnect backoff cap.
+    readonly property int heartbeatInterval: pluginApi?.pluginSettings?.heartbeatInterval
+        ?? pluginApi?.manifest?.metadata?.defaultSettings?.heartbeatInterval
+        ?? 20000
 
     // Live connection to the daemon: true once a snapshot has arrived over the stream; false
     // whenever the `ampered-ctl watch` process is down (crash, missing binary, or hung pipe).
@@ -33,6 +34,8 @@ Item {
     property var inhibitors: []
     property bool manualInhibitActive: false
 
+    // Seconds since the last user activity, or -1 when no agent is connected.
+    property int idleSec: -1
     // Seconds until each idle stage, or -1 when disabled / no agent.
     property int dimInSec: -1
     property int screenOffInSec: -1
@@ -48,20 +51,13 @@ Item {
 
     property string _targetProfile: ""
     property int _reconnectDelay: 0       // grows on consecutive failures, reset on a good snapshot
+    property bool _manualReconnect: false // set by reconnect(): skip backoff, restart immediately
 
     // ── Commands (still one-shot; their effect comes back over the stream) ────────────────
     function setProfile(name) {
         if (!available || name === "" || name === profile) return
         _targetProfile = name
         setProfileProcess.running = true
-    }
-
-    function lock() {
-        if (available) lockProcess.running = true
-    }
-
-    function reloadConfig() {
-        if (available) reloadConfigProcess.running = true
     }
 
     // No reason passed on removal: the daemon drops the sole manual inhibitor when exactly one
@@ -72,12 +68,21 @@ Item {
         else inhibitProcess.running = true
     }
 
+    function lock() {
+        if (!available) return
+        lockProcess.running = true
+    }
+
     // Force an immediate reconnect of the stream (used by the `refresh` IPC).
     function reconnect() {
         _reconnectDelay = 0
         reconnectTimer.stop()
-        if (watchProcess.running) watchProcess.running = false   // onExited schedules the restart
-        else _startWatch()
+        if (watchProcess.running) {
+            _manualReconnect = true
+            watchProcess.running = false   // onExited restarts immediately, skipping backoff
+        } else {
+            _startWatch()
+        }
     }
 
     function _startWatch() {
@@ -96,6 +101,7 @@ Item {
         inhibited = false
         inhibitors = []
         manualInhibitActive = false
+        idleSec = -1
         dimInSec = -1
         screenOffInSec = -1
         sleepInSec = -1
@@ -123,6 +129,7 @@ Item {
         locked = s.locked === true
         inhibited = s.inhibited === true
         lockOnScreenOff = s.lock_on_screen_off === true
+        idleSec = (typeof s.idle_sec === "number") ? s.idle_sec : -1
         dimInSec = (typeof s.dim_in_sec === "number") ? s.dim_in_sec : -1
         screenOffInSec = (typeof s.screen_off_in_sec === "number") ? s.screen_off_in_sec : -1
         sleepInSec = (typeof s.sleep_in_sec === "number") ? s.sleep_in_sec : -1
@@ -145,8 +152,8 @@ Item {
 
     function _nextReconnectDelay() {
         // Ramp 1s → 2s → 4s … capped at the configured interval, so a missing daemon settles
-        // into steady retries at `reconnectInterval` rather than a spin loop.
-        var cap = Math.max(reconnectInterval, 1000)
+        // into steady retries at `heartbeatInterval` rather than a spin loop.
+        var cap = Math.max(heartbeatInterval, 1000)
         var d = _reconnectDelay <= 0 ? Math.min(1000, cap) : Math.min(_reconnectDelay * 2, cap)
         _reconnectDelay = d
         return d
@@ -172,10 +179,20 @@ Item {
             }
         }
         onExited: exitCode => {
-            root._clearState()
             livenessTimer.stop()
-            reconnectTimer.interval = root._nextReconnectDelay()
-            reconnectTimer.restart()
+            if (root._manualReconnect) {
+                // Manual refresh: keep the last-known state on screen while the new process
+                // spins up instead of flashing "Cannot connect" — reconnects are typically
+                // sub-second when the daemon is actually up. A real failure still surfaces:
+                // the restarted process exits again with _manualReconnect already cleared,
+                // falling into the branch below.
+                root._manualReconnect = false
+                root._startWatch()
+            } else {
+                root._clearState()
+                reconnectTimer.interval = root._nextReconnectDelay()
+                reconnectTimer.restart()
+            }
         }
     }
 
@@ -190,7 +207,7 @@ Item {
     // heartbeat — within the window, assume the pipe is hung and force a reconnect.
     Timer {
         id: livenessTimer
-        interval: Math.max(root.reconnectInterval * 2, 15000)
+        interval: Math.max(root.heartbeatInterval * 2, 15000)
         repeat: false
         onTriggered: {
             if (watchProcess.running) watchProcess.running = false   // -> onExited -> reconnect
@@ -212,28 +229,6 @@ Item {
     }
 
     Process {
-        id: lockProcess
-        command: ["sh", "-c", root.ctlPath + " lock"]
-        onExited: exitCode => {
-            if (exitCode !== 0) {
-                ToastService.showNotice(pluginApi?.tr("toast.lock_failed") ?? "Failed to lock session")
-            }
-        }
-    }
-
-    Process {
-        id: reloadConfigProcess
-        command: ["sh", "-c", root.ctlPath + " reload-config"]
-        onExited: exitCode => {
-            if (exitCode === 0) {
-                ToastService.showNotice(pluginApi?.tr("toast.reload_config") ?? "Configuration reloaded")
-            } else {
-                ToastService.showNotice(pluginApi?.tr("toast.reload_config_failed") ?? "Failed to reload configuration")
-            }
-        }
-    }
-
-    Process {
         id: inhibitProcess
         command: ["sh", "-c", root.ctlPath + " inhibit"]
         onExited: exitCode => {
@@ -249,6 +244,16 @@ Item {
         onExited: exitCode => {
             if (exitCode !== 0) {
                 ToastService.showNotice(pluginApi?.tr("toast.uninhibit_failed") ?? "Failed to remove idle inhibitor")
+            }
+        }
+    }
+
+    Process {
+        id: lockProcess
+        command: ["sh", "-c", root.ctlPath + " lock"]
+        onExited: exitCode => {
+            if (exitCode !== 0) {
+                ToastService.showNotice(pluginApi?.tr("toast.lock_failed") ?? "Failed to lock session")
             }
         }
     }

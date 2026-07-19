@@ -12,31 +12,31 @@ ColumnLayout {
     property var cfg: pluginApi?.pluginSettings || ({})
     property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
 
-    property int valueRefreshInterval: cfg.refreshInterval ?? defaults.refreshInterval ?? 5000
+    property int valueHeartbeatInterval: cfg.heartbeatInterval ?? defaults.heartbeatInterval ?? 20000
     property string valueCtlPath: cfg.ctlPath ?? defaults.ctlPath ?? "ampered-ctl"
 
     spacing: Style.marginM
 
     function saveSettings() {
         if (!pluginApi) return
-        pluginApi.pluginSettings.refreshInterval = valueRefreshInterval
+        pluginApi.pluginSettings.heartbeatInterval = valueHeartbeatInterval
         pluginApi.pluginSettings.ctlPath = valueCtlPath
         pluginApi.saveSettings()
     }
 
     NLabel {
-        label: pluginApi?.tr("settings.refresh_interval.label") ?? "Reconnect interval"
-        description: (pluginApi?.tr("settings.refresh_interval.description") ?? "") + " (" + root.valueRefreshInterval + " ms)"
+        label: pluginApi?.tr("settings.heartbeat_interval.label") ?? "Heartbeat interval"
+        description: (pluginApi?.tr("settings.heartbeat_interval.description") ?? "") + " (" + root.valueHeartbeatInterval + " ms)"
     }
 
     NSlider {
         Layout.fillWidth: true
-        from: 1000
-        to: 30000
-        stepSize: 1000
-        value: root.valueRefreshInterval
+        from: 5000
+        to: 60000
+        stepSize: 5000
+        value: root.valueHeartbeatInterval
         onValueChanged: {
-            root.valueRefreshInterval = value
+            root.valueHeartbeatInterval = value
             root.saveSettings()
         }
     }

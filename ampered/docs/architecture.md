@@ -18,17 +18,17 @@ polling. Mutations are still one-shot commands; their effect comes back over the
 ```
 ampered-ctl watch --json   ── long-lived; one JSON snapshot per line, pushed on every change ──┐
                                                                                                │
-   set-profile <name> / lock / reload-config / inhibit / uninhibit  ── one-shot mutations ──┐  │
+   set-profile <name> / inhibit / uninhibit                        ── one-shot mutations ──┐  │
                                                                                             ▼  ▼
    Main.qml  (applySnapshot() → QML properties: available, profile, profiles, powerSource,
               dimmed, screenOff, locked, inhibited, inhibitors, manualInhibitActive,
-              dimInSec, screenOffInSec, sleepInSec, lockInSec, lockOnScreenOff,
+              idleSec, dimInSec, screenOffInSec, sleepInSec, lockInSec, lockOnScreenOff,
               batteryPresent, batteryStatus, batteryPercent,
               batteryTimeToEmpty, batteryTimeToFull)
         │
         ├──pluginApi.mainInstance──▶  BarWidget.qml  (reads properties, re-renders on change)
-        ├──pluginApi.mainInstance──▶  Panel.qml      (reads properties, calls setProfile / lock /
-        │                                             reloadConfig / toggleManualInhibit)
+        ├──pluginApi.mainInstance──▶  Panel.qml      (reads properties, calls setProfile /
+        │                                             toggleManualInhibit / reconnect)
         └──pluginApi.mainInstance──▶  Settings.qml   (reads/writes plugin settings)
 ```
 
@@ -41,19 +41,20 @@ The `watch` process is the single source of truth for `available`:
 
 - **Connect** — `Component.onCompleted` starts the process; the first snapshot sets `available`.
 - **Liveness** — a watchdog `Timer` is restarted by *every* incoming line (snapshots and heartbeat
-  lines alike). If nothing arrives within its window (`max(2×reconnectInterval, 15s)`), the pipe is
+  lines alike). If nothing arrives within its window (`max(2×heartbeatInterval, 15s)`), the pipe is
   assumed hung and the process is torn down to trigger a reconnect.
 - **Reconnect** — on `onExited` (crash, daemon stop, missing binary, or the liveness teardown) all
   state is cleared (`available = false`) and the process is relaunched after a backoff that ramps
-  `1s → 2s → 4s …` capped at `reconnectInterval`. A good snapshot resets the backoff.
+  `1s → 2s → 4s …` capped at `heartbeatInterval`. A good snapshot resets the backoff.
 - **`refresh` IPC** — forces an immediate reconnect (`reconnect()`), not a poll.
 
-Because updates are pushed, `reconnectInterval` (the `refreshInterval` setting) is no longer a poll
-rate — it only bounds how quickly a dropped stream is retried.
+`heartbeatInterval` sizes the liveness/backoff windows around the daemon's own heartbeat cadence —
+it isn't a poll rate; updates are pushed the moment they happen.
 
 ## CLI contract
 
-`ampered-ctl` is unimplemented upstream, so this plugin defines the interface it expects.
+`ampered-ctl watch --json` is now implemented upstream (`crates/ampered-ctl/src/main.rs`); this
+section documents the shape the plugin relies on.
 
 ### `ampered-ctl watch --json` → long-lived stream, one JSON object per line
 
@@ -62,9 +63,9 @@ The primary read path. On connect it prints a **full snapshot**, then a fresh sn
 notify, clients never poll" — this subcommand simply relays that). Requirements:
 
 - **One compact JSON object per line** — no embedded newlines; the plugin splits on `\n`.
-- **Heartbeat** — when idle, emit a small `{ "heartbeat": <epoch> }` line at least every ~10 s so
-  the plugin can tell "connected but quiet" from "hung". Any line (snapshot or heartbeat) resets
-  the liveness watchdog; lines carrying `heartbeat` are otherwise ignored.
+- **Heartbeat** — when idle, emit a small `{ "heartbeat": true }` line every 20s (the CLI's fixed
+  `HEARTBEAT_INTERVAL`) so the plugin can tell "connected but quiet" from "hung". Any line (snapshot
+  or heartbeat) resets the liveness watchdog; lines carrying `heartbeat` are otherwise ignored.
 - The process should stay up until the daemon exits or the pipe closes; the plugin owns reconnect.
 
 Snapshot object — field names/types mirror the `org.ampered.Power1` properties (see the daemon's
@@ -88,6 +89,7 @@ Snapshot object — field names/types mirror the `org.ampered.Power1` properties
   "locked": false,
   "inhibited": false,
   "lock_on_screen_off": true,
+  "idle_sec": 10,
   "dim_in_sec": 170,
   "screen_off_in_sec": 290,
   "sleep_in_sec": 590,
@@ -100,7 +102,9 @@ Snapshot object — field names/types mirror the `org.ampered.Power1` properties
 ```
 
 `battery.status ∈ full | charging | discharging | not_charging | absent | unknown`.
-`*_in_sec = -1` when that stage is disabled or no session agent is connected.
+`idle_sec = -1` when no session agent is connected; otherwise seconds since last activity.
+`*_in_sec = -1` when that stage is disabled, no session agent is connected, or idle is inhibited
+(the stage is paused and won't fire, so a ticking countdown would be misleading).
 `inhibitors[].source ∈ mpris | screensaver | powermanagement | manual | user` — a `manual` entry
 means the user holds a persistent inhibitor (the panel's Inhibit toggle). A snapshot **must** carry
 `active_profile`; lines without it (or with `heartbeat`) are ignored so a partial line can't wipe
@@ -112,8 +116,6 @@ be present and are ignored for now.
 | Command | D-Bus method | polkit action |
 |---|---|---|
 | `ampered-ctl set-profile <name>` | `SetProfile` | `org.ampered.set-profile` |
-| `ampered-ctl lock` | `Lock` | — (ungated) |
-| `ampered-ctl reload-config` | `ReloadConfig` | `org.ampered.reload` |
 | `ampered-ctl inhibit` | `AddManualInhibit` | `org.ampered.inhibit` |
 | `ampered-ctl uninhibit` | `RemoveManualInhibit` | `org.ampered.inhibit` |
 
@@ -135,6 +137,7 @@ property bool   inhibited          // true if any idle inhibitor is held (countd
 property var    inhibitors         // [{ source, scope, reason }, ...] carried in each snapshot
 property bool   manualInhibitActive// true if an inhibitor with source == "manual" is held
 
+property int    idleSec            // seconds since last activity, -1 when no agent
 property int    dimInSec           // seconds until dim, -1 when disabled / no agent
 property int    screenOffInSec     // seconds until screen off, -1 when disabled / no agent
 property int    sleepInSec         // seconds until sleep, -1 when disabled / no agent
@@ -160,11 +163,11 @@ Persisted by calling `pluginApi.saveSettings()` after mutating `pluginApi.plugin
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `refreshInterval` | int | `5000` ms | Reconnect/liveness base interval for the `watch` stream (no longer a poll rate) |
+| `heartbeatInterval` | int | `20000` ms | Expected cadence of `ampered-ctl watch`'s heartbeat lines; sizes the liveness watchdog and the reconnect backoff cap |
 | `ctlPath` | string | `"ampered-ctl"` | Path to the `ampered-ctl` binary |
 
-> The `refreshInterval` key name is kept for settings back-compat; its meaning is now the stream
-> reconnect cadence, surfaced in the UI as "Reconnect interval".
+> Default matches `ampered-ctl`'s own fixed `HEARTBEAT_INTERVAL` (20s, in `crates/ampered-ctl/src/main.rs`)
+> so the liveness window lines up with reality out of the box; raise it if a slower stream is expected.
 
 ## Translations
 

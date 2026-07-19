@@ -12,7 +12,7 @@ profiles from the Noctalia menu bar.
 - Idle-timer countdowns — dim / screen off / sleep / lock — with an "inhibited" indicator
 - Inhibitor list — what is currently holding idle off (media players, manual, etc.)
 - Switch between the daemon's configured power profiles, with the active one highlighted
-- Toggle a manual "keep awake" inhibitor, lock the session, and reload the daemon config from the panel
+- Toggle a manual "keep awake" inhibitor, and force an immediate refresh from the panel
 - Live, event-driven updates over an `ampered-ctl watch` stream — no polling; the UI reflects
   changes as they happen
 - Daemon availability indicator, with automatic reconnect if the stream drops or `ampered-ctl`
@@ -28,16 +28,14 @@ profiles from the Noctalia menu bar.
 
 > **Note.** This plugin talks to `ampered` through the CLI's **JSON** interface. It reads state
 > from a long-lived `ampered-ctl watch --json` stream (one JSON snapshot per line, pushed on every
-> change, plus heartbeats) and mutates via the subcommands `set-profile <name>`, `lock`,
-> `reload-config`, `inhibit`, and `uninhibit`. Until `ampered-ctl` implements these (its `main()`
-> is currently a stub), the plugin shows the "daemon unavailable" state. See
-> [docs/architecture.md](docs/architecture.md) for the exact contract.
+> change, plus heartbeats) and mutates via the subcommands `set-profile <name>`, `inhibit`, and
+> `uninhibit`. See [docs/architecture.md](docs/architecture.md) for the exact contract.
 
 ## Settings
 
 | Setting | Default | Description |
 |---|---|---|
-| `refreshInterval` | `5000` | Stream reconnect interval — how quickly to retry the `ampered-ctl watch` stream if it drops (ms) |
+| `heartbeatInterval` | `20000` | Expected cadence of `ampered-ctl watch`'s heartbeat lines — sizes the liveness check and reconnect backoff (ms) |
 | `ctlPath` | `ampered-ctl` | Path to the `ampered-ctl` binary |
 
 ## IPC

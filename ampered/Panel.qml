@@ -20,6 +20,13 @@ Item {
         return Math.floor(sec / 60) + "m " + (sec % 60) + "s"
     }
 
+    // Elapsed idle time: unlike the countdowns, -1 means "no agent connected" rather than
+    // "disabled" — there's no per-stage toggle for whether idle time itself is tracked.
+    function elapsedText(sec) {
+        if (sec < 0) return pluginApi?.tr("panel.unknown") ?? "Unknown"
+        return Math.floor(sec / 60) + "m " + (sec % 60) + "s"
+    }
+
     // Lock differs: a -1 lock timer can still mean "locks when the screen turns off"
     // (lock_on_screen_off) rather than lock-on-idle being off entirely.
     function lockText(sec, onScreenOff) {
@@ -52,10 +59,21 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
+                // Reserving scrollbar width would shrink content width once verticalScrollable
+                // flips true, forcing extra text wraps that overflow the content-sized panel height.
+                reserveScrollbarSpace: false
 
                 ColumnLayout {
                     id: cardsColumn
-                    width: parent.width
+                    // Deliberately not `parent.width`: on the very first render frame the
+                    // NScrollView's content width can still be 0 (host panel hasn't finished
+                    // sizing from contentPreferredWidth yet). At width 0 every NText wraps
+                    // character-per-line, implicitHeight spikes, and contentPreferredHeight —
+                    // read once at popup-open time — latches onto that bogus max-clamped value,
+                    // leaving a stray scrollbar over a short message once the text re-wraps
+                    // correctly a frame later. contentPreferredWidth is a fixed constant known
+                    // immediately, so anchoring to it sidesteps the race entirely.
+                    width: root.contentPreferredWidth - Style.marginL * 2
                     spacing: Style.marginM
 
                     // Battery card — headline percent + status. When the daemon is unreachable,
@@ -86,6 +104,12 @@ Item {
                             color: Color.mError
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            // Text.implicitHeight for wrapped text lags one layout pass behind a
+                            // width/text change (Qt recomputes it during polish, not synchronously).
+                            // The host samples contentPreferredHeight right when this message first
+                            // appears, so without a floor the card gets measured one line too short
+                            // and its bottom line is clipped. Reserve ~2 wrapped lines up front.
+                            Layout.minimumHeight: font.pixelSize * 2.6
                         }
 
                         NText {
@@ -153,6 +177,15 @@ Item {
                             pointSize: Style.fontSizeXS
                             color: Color.mError
                             wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            // Same first-frame wrapped-height lag as the no_daemon message above.
+                            Layout.minimumHeight: font.pixelSize * 2.6
+                        }
+
+                        NText {
+                            text: (pluginApi?.tr("panel.idle_time") ?? "Idle time") + ": " + root.elapsedText(main?.idleSec ?? -1)
+                            pointSize: Style.fontSizeXS
+                            color: Color.mOnSurface
                             Layout.fillWidth: true
                         }
 
@@ -252,7 +285,7 @@ Item {
                 NButton {
                     Layout.fillWidth: true
                     visible: main?.available ?? false
-                    text: pluginApi?.tr("panel.lock_now") ?? "Lock now"
+                    text: pluginApi?.tr("panel.lock") ?? "Lock"
                     icon: "lock"
                     onClicked: main?.lock()
                 }
@@ -260,9 +293,9 @@ Item {
                 NButton {
                     Layout.fillWidth: true
                     visible: main?.available ?? false
-                    text: pluginApi?.tr("panel.reload_config") ?? "Reload config"
+                    text: pluginApi?.tr("panel.refresh") ?? "Refresh"
                     icon: "rotate"
-                    onClicked: main?.reloadConfig()
+                    onClicked: main?.reconnect()
                 }
             }
         }

@@ -3,11 +3,9 @@
   "toast": {
     "profile_set": "Profile changed to {profile}",
     "profile_set_failed": "Failed to change power profile",
-    "lock_failed": "Failed to lock session",
-    "reload_config": "Configuration reloaded",
-    "reload_config_failed": "Failed to reload configuration",
     "inhibit_failed": "Failed to inhibit idle",
-    "uninhibit_failed": "Failed to remove idle inhibitor"
+    "uninhibit_failed": "Failed to remove idle inhibitor",
+    "lock_failed": "Failed to lock session"
   },
   "panel": {
     "unavailable": "Daemon unavailable",
@@ -24,6 +22,8 @@
     "inhibit": "Inhibit",
     "uninhibit": "Uninhibit",
     "idle_timers": "Idle Timers",
+    "idle_time": "Idle time",
+    "unknown": "Unknown",
     "dim_in": "Dim in",
     "screen_off_in": "Screen off in",
     "sleep_in": "Sleep in",
@@ -31,16 +31,16 @@
     "disabled": "Disabled",
     "with_screen_off": "With screen off",
     "inhibited": "Idle inhibited — countdowns paused",
-    "lock_now": "Lock now",
-    "reload_config": "Reload config"
+    "lock": "Lock",
+    "refresh": "Refresh"
   },
   "context": {
     "settings": "Settings"
   },
   "settings": {
-    "refresh_interval": {
-      "label": "Reconnect interval",
-      "description": "How often to retry the ampered-ctl watch stream if it drops (ms)."
+    "heartbeat_interval": {
+      "label": "Heartbeat interval",
+      "description": "Expected cadence of ampered-ctl watch heartbeat lines; sizes the liveness check and reconnect backoff (ms)."
     },
     "ctl_path": {
       "label": "ampered-ctl path",

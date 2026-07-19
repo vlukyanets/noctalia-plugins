@@ -3,11 +3,9 @@
   "toast": {
     "profile_set": "Профиль изменён на {profile}",
     "profile_set_failed": "Не удалось изменить профиль питания",
-    "lock_failed": "Не удалось заблокировать сеанс",
-    "reload_config": "Конфигурация перезагружена",
-    "reload_config_failed": "Не удалось перезагрузить конфигурацию",
     "inhibit_failed": "Не удалось заблокировать простой",
-    "uninhibit_failed": "Не удалось снять блокировку простоя"
+    "uninhibit_failed": "Не удалось снять блокировку простоя",
+    "lock_failed": "Не удалось заблокировать сессию"
   },
   "panel": {
     "unavailable": "Демон недоступен",
@@ -24,6 +22,8 @@
     "inhibit": "Заблокировать простой",
     "uninhibit": "Снять блокировку",
     "idle_timers": "Таймеры простоя",
+    "idle_time": "Простой",
+    "unknown": "Неизвестно",
     "dim_in": "Затемнение через",
     "screen_off_in": "Отключение экрана через",
     "sleep_in": "Сон через",
@@ -31,16 +31,16 @@
     "disabled": "Отключено",
     "with_screen_off": "При отключении экрана",
     "inhibited": "Простой заблокирован — отсчёт приостановлен",
-    "lock_now": "Заблокировать",
-    "reload_config": "Перезагрузить конфигурацию"
+    "lock": "Заблокировать",
+    "refresh": "Обновить"
   },
   "context": {
     "settings": "Настройки"
   },
   "settings": {
-    "refresh_interval": {
-      "label": "Интервал переподключения",
-      "description": "Как часто повторять подключение к потоку ampered-ctl watch при обрыве (мс)."
+    "heartbeat_interval": {
+      "label": "Интервал heartbeat",
+      "description": "Ожидаемая частота heartbeat-строк ampered-ctl watch; определяет проверку живости и предел задержки переподключения (мс)."
     },
     "ctl_path": {
       "label": "Путь к ampered-ctl",

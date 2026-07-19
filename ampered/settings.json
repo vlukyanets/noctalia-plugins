@@ -1,0 +1,4 @@
+{
+  "heartbeatInterval": 20000,
+  "ctlPath": "ampered-ctl"
+}

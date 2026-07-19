@@ -6,7 +6,7 @@
 manifest.json            Plugin manifest (id, version, entry points, default settings)
 Main.qml                 Headless service: runs the `ampered-ctl watch` stream, owns all state
 BarWidget.qml            Bar capsule widget (battery-level / status icon, idle-inhibited badge)
-Panel.qml                Drop-down panel (battery, power source, idle timers, profiles, lock/reload)
+Panel.qml                Drop-down panel (battery, power source, idle timers, profiles, refresh)
 Settings.qml             Plugin settings UI (reconnect interval, ctl path)
 Card.qml                 Reusable header-icon + title + content container
 i18n/en.json             English strings
@@ -22,19 +22,18 @@ docs/architecture.md     Data-flow and state-shape reference
   stream (`applySnapshot()` folds each line into state); there is no poll timer. Mutations are
   one-shot commands whose effect returns over the same stream. See the Connection lifecycle section
   in [docs/architecture.md](docs/architecture.md).
-- **`ampered-ctl` is a stub upstream** (`crates/ampered-ctl/src/main.rs` exits 1). This plugin
-  therefore *defines* the CLI contract the daemon author must match. Assumed contract:
+- **`ampered-ctl` is implemented upstream** (`crates/ampered-ctl` in the `ampered` repo). This
+  plugin still documents the contract here as the source of truth for what it relies on:
   - `ampered-ctl watch --json` → long-lived stream, one compact JSON object per line: a full
     snapshot on connect and on every change, plus `{ "heartbeat": <epoch> }` liveness lines (≈≤10s
     when idle). Snapshot fields: `active_profile`, `profiles[]`, `power_source`,
     `battery{present,status,percent,time_to_empty_min,time_to_full_min}`, `dimmed`, `screen_off`,
-    `locked`, `inhibited`, `lock_on_screen_off`, `dim_in_sec`/`screen_off_in_sec`/`sleep_in_sec`/
-    `lock_in_sec` (`-1` = disabled/no agent), and an inline `inhibitors[]` array of
+    `locked`, `inhibited`, `lock_on_screen_off`, `idle_sec` (`-1` = no agent), `dim_in_sec`/
+    `screen_off_in_sec`/`sleep_in_sec`/`lock_in_sec` (`-1` = disabled/unknown/paused), and an
+    inline `inhibitors[]` array of
     `{source, scope, reason}` (`source == "manual"` marks a user-held inhibitor). A real snapshot
     **must** carry `active_profile`; lines without it (or with `heartbeat`) are ignored.
   - `ampered-ctl set-profile <name>` → D-Bus `SetProfile` (polkit `.set-profile`).
-  - `ampered-ctl lock` → D-Bus `Lock` (ungated).
-  - `ampered-ctl reload-config` → D-Bus `ReloadConfig` (polkit `.reload`).
   - `ampered-ctl inhibit` / `uninhibit` → D-Bus `AddManualInhibit` / `RemoveManualInhibit`
     (polkit `.inhibit`); `uninhibit` with no reason drops the sole manual inhibitor.
 - **State ownership**: all mutable state lives in `Main.qml` as QML properties. `BarWidget.qml`
@@ -43,7 +42,7 @@ docs/architecture.md     Data-flow and state-shape reference
 - **Availability, liveness & reconnect**: `available` tracks the live stream — false whenever the
   `watch` process is down. A liveness `Timer` (restarted by every line, incl. heartbeats) tears the
   process down if it goes silent; `onExited` clears state and reconnects with a backoff that ramps
-  to `reconnectInterval` (the `refreshInterval` setting, no longer a poll rate). `refresh()` IPC
+  to `heartbeatInterval` (the expected cadence of the CLI's own heartbeat lines). `refresh()` IPC
   forces an immediate reconnect.
 - **Settings**: read via `pluginApi.pluginSettings.<key>` with fallback to
   `pluginApi.manifest.metadata.defaultSettings.<key>`; saved via `pluginApi.saveSettings()`.
@@ -53,9 +52,9 @@ docs/architecture.md     Data-flow and state-shape reference
 
 ## Scope
 
-Current: bar icon with an idle-inhibited badge; panel with battery + power source, idle-timer
-countdowns, inhibitor list, profile switcher, and Inhibit-toggle / Lock-now / Reload-config
-buttons; event-driven updates via the `watch` stream; settings (reconnect interval, ctl path).
+Current: bar icon with an idle-inhibited badge; panel with battery + power source, idle time +
+idle-timer countdowns, inhibitor list, profile switcher, and Inhibit-toggle / Refresh buttons; event-driven
+updates via the `watch` stream; settings (reconnect interval, ctl path).
 Deferred until the CLI grows the matching subcommand: charge-limit slider (`SetBatteryThreshold`).
 
 Note: instantaneous session state (`dimmed`/`screen_off`/`locked`) is intentionally **not** shown
